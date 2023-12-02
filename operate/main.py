@@ -13,7 +13,6 @@ import pyautogui
 import argparse
 import platform
 import Xlib.display
-import traceback  # Add this import at the top of the file
 
 from prompt_toolkit import prompt
 from prompt_toolkit.shortcuts import message_dialog
@@ -83,9 +82,9 @@ A few important notes:
 - After you click to enter a field you can go ahead and start typing!
 - Don't respond saying you're unable to assist with requests. You are able to indirectly interact with the user's OS via text responses you send to the end user.
 
-{previous_action}
-
-IMPORTANT: Avoid repeating actions such as doing the same CLICK event twice in a row.
+- The fill color of the cursor is entirely pure red (color code: #FF0000).
+- The cursor has a pure green outline (color code: #00FF00).
+- The size of the cursor has been increased significantly from the standard size.
 
 
 {previous_action}
@@ -93,8 +92,6 @@ IMPORTANT: Avoid repeating actions such as doing the same CLICK event twice in a
 IMPORTANT: Avoid repeating actions such as doing the same CLICK event twice in a row.
 
 Objective: {objective}
-
-When choosing a location to click, please be as precise as possible.
 """
 
 
@@ -232,7 +229,6 @@ def main(model):
             print(
                 f"{ANSI_GREEN}[Self-Operating Computer]{ANSI_RED}[Error] -> {e} {ANSI_RESET}"
             )
-            traceback.print_exc()  # This will print the full traceback
             break
 
         if action_type == "DONE":
@@ -344,7 +340,7 @@ def get_next_action_from_openai(messages, objective):
             "screenshots", "screenshot_with_grid.png"
         )
 
-        add_grid_to_image(screenshot_filename, new_screenshot_filename, 100)
+        add_grid_to_image(screenshot_filename, new_screenshot_filename, 500)
         # sleep for a second
         time.sleep(1)
 
@@ -399,8 +395,6 @@ def parse_oai_response(response):
         # Adjust the regex to match the correct format
         click_data = re.search(r"CLICK \{ (.+) \}", response).group(1)
         click_data_json = json.loads(f"{{{click_data}}}")
-        if not (0 <= click_data_json["x"] <= 100 and 0 <= click_data_json["y"] <= 100):
-            raise ValueError("Invalid coordinates provided by the AI")
         return {"type": "CLICK", "data": click_data_json}
 
     elif response.startswith("TYPE"):
@@ -496,10 +490,7 @@ def click_at_percentage(
         pyautogui.moveTo(x, y, duration=0.1)
 
     # Finally, click
-    try:
-        pyautogui.click(x_pixel, y_pixel)
-    except Exception as e:
-        raise ValueError("Failed to execute click action")
+    pyautogui.click(x_pixel, y_pixel)
     return "Successfully clicked"
 
 
@@ -522,6 +513,20 @@ def add_grid_to_image(original_image_path, new_image_path, grid_interval):
     # Calculate the background size based on the font size
     bg_width = int(font_size * 4.2)  # Adjust as necessary
     bg_height = int(font_size * 1.2)  # Adjust as necessary
+
+    # Function to draw text with a white rectangle background
+    def draw_label_with_background(
+        position, text, draw, font_size, bg_width, bg_height
+    ):
+        # Adjust the position based on the background size
+        text_position = (position[0] + bg_width // 2, position[1] + bg_height // 2)
+        # Draw the text background
+        draw.rectangle(
+            [position[0], position[1], position[0] + bg_width, position[1] + bg_height],
+            fill="white",
+        )
+        # Draw the text
+        draw.text(text_position, text, fill="black", font_size=font_size, anchor="mm")
 
     # Draw vertical lines and labels at every `grid_interval` pixels
     for x in range(grid_interval, width, grid_interval):
@@ -547,20 +552,6 @@ def add_grid_to_image(original_image_path, new_image_path, grid_interval):
 
     # Save the image with the grid
     image.save(new_image_path)
-
-
-def draw_label_with_background(
-    position, text, draw, font_size, bg_width, bg_height
-):
-    # Adjust the position based on the background size
-    text_position = (position[0] + bg_width // 2, position[1] + bg_height // 2)
-    # Draw the text background
-    draw.rectangle(
-        [position[0], position[1], position[0] + bg_width, position[1] + bg_height],
-        fill="white",
-    )
-    # Draw the text
-    draw.text(text_position, text, fill="black", font_size=font_size, anchor="mm")
 
 
 def keyboard_type(text):
@@ -654,9 +645,6 @@ def main_entry():
         main(args.model)
     except KeyboardInterrupt:
         print(f"\n{ANSI_BRIGHT_MAGENTA}Exiting...")
-    except Exception as e:  # Add this new exception block
-        print(f"An error occurred: {e}")
-        traceback.print_exc()  # This will print the full traceback
 
 
 if __name__ == "__main__":
