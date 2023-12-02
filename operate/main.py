@@ -13,6 +13,7 @@ import pyautogui
 import argparse
 import platform
 import Xlib.display
+import traceback  # Add this import at the top of the file
 
 from prompt_toolkit import prompt
 from prompt_toolkit.shortcuts import message_dialog
@@ -220,6 +221,7 @@ def main(model):
             print(
                 f"{ANSI_GREEN}[Self-Operating Computer]{ANSI_RED}[Error] -> {e} {ANSI_RESET}"
             )
+            traceback.print_exc()  # This will print the full traceback
             break
 
         if action_type == "DONE":
@@ -641,6 +643,9 @@ def main_entry():
         main(args.model)
     except KeyboardInterrupt:
         print(f"\n{ANSI_BRIGHT_MAGENTA}Exiting...")
+    except Exception as e:  # Add this new exception block
+        print(f"An error occurred: {e}")
+        traceback.print_exc()  # This will print the full traceback
 
 
 if __name__ == "__main__":
