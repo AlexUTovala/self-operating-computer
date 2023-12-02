@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open("README.md", "r", encoding="UTF-8") as fh:
     long_description = fh.read()
 
-# Get the code version
+# Get the code version 
 version = {}
 with open(os.path.join(here, "autogen/version.py")) as fp:
     exec(fp.read(), version)
